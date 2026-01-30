@@ -1,204 +1,90 @@
 const express = require("express");
 const router = express.Router();
-const Booking = require("../models/booking");
 const moment = require("moment");
-const { v4: uuidv4 } = require("uuid");
-const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const Booking = require("../models/booking");
+const Room = require("../models/room");
 
-/**
- * 🔍 CHECK ROOM AVAILABILITY
- * Used by frontend Room card
- */
+/* ================= CHECK AVAILABILITY ================= */
 router.post("/checkavailability", async (req, res) => {
   try {
     const { roomid, fromdate, todate } = req.body;
 
-    if (!roomid || !fromdate || !todate) {
-      return res.json({ available: false });
-    }
+    const bookings = await Booking.find({ roomid });
 
-    const from = moment(fromdate, "DD-MM-YYYY", true);
-    const to = moment(todate, "DD-MM-YYYY", true);
-
-    if (!from.isValid() || !to.isValid()) {
-      return res.json({ available: false });
-    }
-
-    const bookings = await Booking.find({
-      roomid,
-      status: "booked",
-    });
+    let isAvailable = true;
 
     for (const booking of bookings) {
       const bookedFrom = moment(booking.fromdate, "DD-MM-YYYY");
       const bookedTo = moment(booking.todate, "DD-MM-YYYY");
 
-      // ❌ overlap
+      const selectedFrom = moment(fromdate, "DD-MM-YYYY");
+      const selectedTo = moment(todate, "DD-MM-YYYY");
+
       if (
-        from.isSameOrBefore(bookedTo) &&
-        to.isSameOrAfter(bookedFrom)
+        selectedFrom.isSameOrBefore(bookedTo) &&
+        selectedTo.isSameOrAfter(bookedFrom)
       ) {
-        return res.json({ available: false });
+        isAvailable = false;
+        break;
       }
     }
 
-    return res.json({ available: true });
-  } catch (error) {
-    return res.json({ available: false });
+    res.json({ available: isAvailable });
+  } catch (err) {
+    res.status(500).json({ available: false });
   }
 });
 
-/**
- * 🔐 BOOK ROOM (REAL AVAILABILITY CHECK)
- */
+/* ================= BOOK ROOM ================= */
 router.post("/bookroom", async (req, res) => {
   try {
-    const {
-      room,
-      roomid,
-      userid,
-      fromdate,
-      todate,
-      totalamount,
-      totalDays,
-      token,
-    } = req.body;
+    const booking = await Booking.create(req.body);
 
-    if (
-      !room ||
-      !roomid ||
-      !userid ||
-      !fromdate ||
-      !todate ||
-      !totalamount ||
-      !totalDays ||
-      !token
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are required",
-      });
-    }
-
-    const from = moment(fromdate, "DD-MM-YYYY", true);
-    const to = moment(todate, "DD-MM-YYYY", true);
-
-    if (!from.isValid() || !to.isValid()) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid date format",
-      });
-    }
-
-    // 🔥 REAL AVAILABILITY CHECK (Booking collection)
-    const existingBookings = await Booking.find({
-      roomid,
-      status: "booked",
+    const room = await Room.findById(req.body.roomid);
+    room.currentbookings.push({
+      bookingid: booking._id.toString(),
+      fromdate: req.body.fromdate,
+      todate: req.body.todate,
     });
 
-    for (const booking of existingBookings) {
-      const bookedFrom = moment(booking.fromdate, "DD-MM-YYYY");
-      const bookedTo = moment(booking.todate, "DD-MM-YYYY");
+    await room.save();
 
-      if (
-        from.isSameOrBefore(bookedTo) &&
-        to.isSameOrAfter(bookedFrom)
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Room already booked for selected dates",
-        });
-      }
-    }
-
-    // 💳 STRIPE CUSTOMER
-    const customer = await stripe.customers.create({
-      email: token.email,
-      source: token.id,
-    });
-
-    // 💳 STRIPE PAYMENT
-    const payment = await stripe.charges.create(
-      {
-        amount: totalamount * 100,
-        currency: "INR",
-        customer: customer.id,
-        receipt_email: token.email,
-        description: `Room booking - ${room}`,
-      },
-      { idempotencyKey: uuidv4() }
-    );
-
-    if (payment.status !== "succeeded") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment failed",
-      });
-    }
-
-    // 💾 SAVE BOOKING
-    const booking = new Booking({
-      room,
-      roomid,
-      userid,
-      fromdate: from.format("DD-MM-YYYY"),
-      todate: to.format("DD-MM-YYYY"),
-      totalamount,
-      totaldays: totalDays,
-      transactionId: payment.id,
-      status: "booked",
-    });
-
-    await booking.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Room booked successfully",
-      booking,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Booking failed" });
   }
 });
 
-/**
- * 📄 GET BOOKINGS BY USER
- */
+/* ================= GET BOOKINGS ================= */
 router.post("/getbookingbyuserid", async (req, res) => {
   try {
-    const bookings = await Booking.find({
-      userid: req.body.userid,
-    }).sort({ createdAt: -1 });
-
+    const bookings = await Booking.find({ userid: req.body.userid });
     res.json(bookings);
-  } catch {
-    res.status(500).json({ message: "Error fetching bookings" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed" });
   }
 });
 
-/**
- * ❌ CANCEL BOOKING
- */
+/* ================= HARD DELETE BOOKING ================= */
 router.post("/cancelbooking", async (req, res) => {
   try {
-    const { bookingid } = req.body;
+    const { bookingid, roomid } = req.body;
 
-    const booking = await Booking.findById(bookingid);
-    if (!booking) {
-      return res.status(404).json({ message: "Booking not found" });
-    }
+    console.log("🔥 HARD DELETE:", bookingid);
 
-    booking.status = "cancelled";
-    await booking.save();
+    // 1. DELETE booking completely
+    await Booking.findByIdAndDelete(bookingid);
 
-    res.json({
-      success: true,
-      message: "Booking cancelled successfully",
-    });
-  } catch {
+    // 2. REMOVE dates from room
+    const room = await Room.findById(roomid);
+    room.currentbookings = room.currentbookings.filter(
+      (b) => b.bookingid !== bookingid
+    );
+    await room.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Cancel failed" });
   }
 });

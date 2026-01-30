@@ -1,7 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
+import API from "../api";
 
 function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -16,20 +16,16 @@ function LoginScreen() {
       return;
     }
 
-    const user = {
-      email,
-      password,
-    };
-
     try {
       setLoading(true);
       setError(null);
 
-      const { data } = await axios.post("/api/users/login", user);
+      const { data } = await API.post("/users/login", {
+        email,
+        password,
+      });
 
-      // ✅ TAB-WISE LOGIN (IMPORTANT FIX)
       sessionStorage.setItem("currentUser", JSON.stringify(data));
-
       setLoading(false);
       window.location.href = "/home";
     } catch (err) {
@@ -48,26 +44,13 @@ function LoginScreen() {
           <div className="bs">
             <h2>Login</h2>
 
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input className="form-control" placeholder="Email"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
 
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type="password" className="form-control" placeholder="Password"
+              value={password} onChange={(e) => setPassword(e.target.value)} />
 
-            <button
-              className="btn btn-primary mt-3"
-              onClick={login}
-            >
+            <button className="btn btn-primary mt-3" onClick={login}>
               Login
             </button>
           </div>

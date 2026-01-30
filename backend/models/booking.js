@@ -1,16 +1,22 @@
 const mongoose = require("mongoose");
 
-const bookingSchema = mongoose.Schema(
+const bookingSchema = new mongoose.Schema(
   {
-    room: { type: String, required: true },
-    roomid: { type: String, required: true },
-    userid: { type: String, required: true },
-    fromdate: { type: String, required: true },
-    todate: { type: String, required: true },
-    totalamount: { type: Number, required: true },
-    totaldays: { type: Number, required: true },
-    transactionId: { type: String, required: true },
-    status: { type: String, default: "booked" },
+    room: String,
+    roomid: String,
+
+    // 🔥 IMPORTANT: STRING ONLY
+    userid: String,
+
+    fromdate: String,
+    todate: String,
+    totalamount: Number,
+    totaldays: Number,
+    transactionId: String,
+    status: {
+      type: String,
+      default: "booked",
+    },
   },
   { timestamps: true }
 );

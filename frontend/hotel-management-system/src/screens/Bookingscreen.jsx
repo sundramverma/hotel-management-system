@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
-import Loader from "../components/Loader";
-import Error from "../components/Error";
 import moment from "moment";
 import StripeCheckout from "react-stripe-checkout";
 import Swal from "sweetalert2";
+
+import Loader from "../components/Loader";
+import Error from "../components/Error";
+import API from "../api"; // 🔥 IMPORTANT
 
 function BookingScreen() {
   const { roomid, fromdate, todate } = useParams();
@@ -14,7 +15,6 @@ function BookingScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // 🔒 DATE VALIDATION
   const from = moment(fromdate, "DD-MM-YYYY", true);
   const to = moment(todate, "DD-MM-YYYY", true);
 
@@ -25,35 +25,39 @@ function BookingScreen() {
   const totalDays = to.diff(from, "days") + 1;
   const totalAmount = room ? room.rentperday * totalDays : 0;
 
-  // 🔹 LOGIN CHECK (TAB-WISE)
   const user = JSON.parse(sessionStorage.getItem("currentUser"));
   if (!user) {
     return <Error message="Please login to book room" />;
   }
 
-  // 🔹 FETCH ROOM
+  // 🔥 FETCH ROOM
   useEffect(() => {
     async function fetchRoom() {
       try {
-        const { data } = await axios.post("/api/rooms/getroombyid", {
+        setLoading(true);
+
+        const { data } = await API.post("/rooms/getroombyid", {
           roomid,
         });
+
         setRoom(data);
         setLoading(false);
-      } catch {
-        setError("Failed to load room details");
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load room");
         setLoading(false);
       }
     }
+
     fetchRoom();
   }, [roomid]);
 
-  // 🔹 PAYMENT + BOOKING
+  // 🔥 BOOK ROOM
   async function onToken(token) {
     try {
       setLoading(true);
 
-      await axios.post("/api/bookings/bookroom", {
+      await API.post("/bookings/bookroom", {
         room: room.name,
         roomid: room._id,
         userid: user._id,
@@ -69,13 +73,10 @@ function BookingScreen() {
       Swal.fire("Success", "Room booked successfully", "success").then(() => {
         window.location.href = "/profile";
       });
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       setLoading(false);
-      Swal.fire(
-        "Booking Failed",
-        error.response?.data?.message || "Something went wrong",
-        "error"
-      );
+      Swal.fire("Error", "Booking failed", "error");
     }
   }
 
@@ -88,7 +89,7 @@ function BookingScreen() {
         <div className="col-md-5">
           <h2>{room.name}</h2>
           <img
-            src={room.imageurls[0]}
+            src={room.imageurls?.[0]}
             alt={room.name}
             className="bigimg"
           />

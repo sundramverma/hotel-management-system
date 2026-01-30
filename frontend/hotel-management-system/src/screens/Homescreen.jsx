@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Room from "../components/Room";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
 import Filter from "../components/Filter";
+import API from "../api";
 
 function HomeScreen() {
   const [rooms, setRooms] = useState([]);
@@ -18,14 +18,16 @@ function HomeScreen() {
   useEffect(() => {
     async function fetchRooms() {
       try {
-        const { data } = await axios.get("/api/rooms/getallrooms");
+        const { data } = await API.get("/rooms");
         setRooms(data);
         setLoading(false);
       } catch (err) {
+        console.error("Rooms fetch error:", err);
         setError("Failed to load rooms");
         setLoading(false);
       }
     }
+
     fetchRooms();
   }, []);
 
@@ -51,7 +53,7 @@ function HomeScreen() {
   if (error) return <Error message={error} />;
 
   return (
-    <div>
+    <>
       <Filter
         setFromdate={setFromdate}
         setTodate={setTodate}
@@ -70,7 +72,7 @@ function HomeScreen() {
           ))}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -2,23 +2,24 @@ const express = require("express");
 const router = express.Router();
 const Room = require("../models/room");
 
-/**
- * @route   GET /api/rooms/getallrooms
- * @desc    Get all rooms
- */
-router.get("/getallrooms", async (req, res) => {
+// 🔥 CONFIRM ROUTE LOADED
+console.log("✅ roomRoute.js LOADED");
+
+// ✅ GET ALL ROOMS
+// URL: http://localhost:5000/api/rooms
+router.get("/", async (req, res) => {
+  console.log("👉 GET /api/rooms HIT");
   try {
     const rooms = await Room.find({});
-    res.json(rooms);
+    res.status(200).json(rooms);
   } catch (error) {
+    console.error("❌ Error fetching rooms:", error.message);
     res.status(500).json({ message: error.message });
   }
 });
 
-/**
- * @route   POST /api/rooms/getroombyid
- * @desc    Get single room by ID
- */
+// ✅ GET ROOM BY ID
+// URL: POST http://localhost:5000/api/rooms/getroombyid
 router.post("/getroombyid", async (req, res) => {
   try {
     const { roomid } = req.body;
@@ -28,79 +29,13 @@ router.post("/getroombyid", async (req, res) => {
     }
 
     const room = await Room.findById(roomid);
-
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
 
-    res.json(room);
+    res.status(200).json(room);
   } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-/**
- * @route   POST /api/rooms/addroom
- * @desc    Add new room (Admin)
- */
-router.post("/addroom", async (req, res) => {
-  try {
-    const newRoom = new Room(req.body);
-    const savedRoom = await newRoom.save();
-
-    res.status(201).json({
-      success: true,
-      message: "Room added successfully",
-      room: savedRoom,
-    });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-/**
- * @route   PUT /api/rooms/updateroom/:id
- * @desc    Update room (Admin)
- */
-router.put("/updateroom/:id", async (req, res) => {
-  try {
-    const updatedRoom = await Room.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-
-    if (!updatedRoom) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    res.json({
-      success: true,
-      message: "Room updated successfully",
-      room: updatedRoom,
-    });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
-/**
- * @route   DELETE /api/rooms/deleteroom/:id
- * @desc    Delete room (Admin)
- */
-router.delete("/deleteroom/:id", async (req, res) => {
-  try {
-    const deletedRoom = await Room.findByIdAndDelete(req.params.id);
-
-    if (!deletedRoom) {
-      return res.status(404).json({ message: "Room not found" });
-    }
-
-    res.json({
-      success: true,
-      message: "Room deleted successfully",
-    });
-  } catch (error) {
+    console.error("❌ Error fetching room:", error.message);
     res.status(500).json({ message: error.message });
   }
 });

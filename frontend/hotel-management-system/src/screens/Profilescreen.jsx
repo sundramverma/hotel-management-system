@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { Tabs } from "antd";
-import axios from "axios";
+import API from "../api";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
 
 function ProfileScreen() {
   const user = JSON.parse(sessionStorage.getItem("currentUser"));
-
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,38 +15,41 @@ function ProfileScreen() {
     return <Error message="Please login to view profile" />;
   }
 
+  /* ================= FETCH BOOKINGS ================= */
   async function fetchBookings() {
     try {
       setLoading(true);
       setError(null);
 
-      const { data } = await axios.post(
-        "/api/bookings/getbookingbyuserid",
+      const { data } = await API.post(
+        "/bookings/getbookingbyuserid",
         { userid: user._id }
       );
 
       setBookings(Array.isArray(data) ? data : []);
       setLoading(false);
-    } catch {
+    } catch (err) {
       setLoading(false);
       setError("Failed to load bookings");
     }
   }
 
+  /* ================= CANCEL BOOKING (HARD DELETE) ================= */
   async function cancelBooking(bookingid, roomid) {
     try {
       setLoading(true);
 
-      await axios.post("/api/bookings/cancelbooking", {
+      await API.post("/bookings/cancelbooking", {
         bookingid,
         roomid,
       });
 
       await fetchBookings();
       setLoading(false);
-    } catch {
+    } catch (err) {
+      console.error("Cancel error:", err);
       setLoading(false);
-      alert("Failed to cancel booking");
+      alert("Cancel failed");
     }
   }
 
@@ -91,7 +93,7 @@ function ProfileScreen() {
                   bookings.map((booking) => (
                     <div
                       key={booking._id}
-                      className="bs d-flex justify-content-between"
+                      className="bs d-flex justify-content-between align-items-center mb-3"
                     >
                       <div>
                         <h4>{booking.room}</h4>
@@ -99,42 +101,26 @@ function ProfileScreen() {
                           From: {booking.fromdate} — To: {booking.todate}
                         </p>
                         <p>Total Amount: ₹{booking.totalamount}</p>
-                        <p>
-                          Status:{" "}
-                          <b
-                            style={{
-                              color:
-                                booking.status === "booked"
-                                  ? "green"
-                                  : "red",
-                            }}
-                          >
-                            {booking.status}
-                          </b>
-                        </p>
                       </div>
 
-                      <div className="d-flex align-items-center">
-                        {booking.status === "booked" && (
-                          <button
-                            className="btn btn-danger"
-                            onClick={() =>
-                              cancelBooking(
-                                booking._id,
-                                booking.roomid
-                              )
-                            }
-                          >
-                            Cancel Booking
-                          </button>
-                        )}
+                      <div>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() =>
+                            cancelBooking(
+                              booking._id,
+                              booking.roomid
+                            )
+                          }
+                        >
+                          Cancel Booking
+                        </button>
                       </div>
                     </div>
                   ))}
               </div>
             ),
           },
-         
         ]}
       />
     </div>

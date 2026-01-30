@@ -1,91 +1,30 @@
 const mongoose = require("mongoose");
 
-const roomSchema = mongoose.Schema(
+const roomSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    name: { type: String, required: true },
+    location: { type: String, required: true },
+    maxcount: { type: Number, required: true },
+    phonenumber: { type: Number, required: true },
+    rentperday: { type: Number, required: true },
 
-    location: {
-      type: String,
-      required: true,
-    },
-
-    maxcount: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-
-    phonenumber: {
-      type: Number,
-      required: true,
-    },
-
-    rentperday: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
+    // 🔥 MATCHING YOUR DB
     imageurls: {
       type: [String],
       required: true,
-      validate: {
-        validator: function (arr) {
-          return arr.length > 0;
-        },
-        message: "At least one image URL is required",
-      },
     },
 
-    currentbookings: {
-      type: [
-        {
-          bookingid: { type: String },
-          fromdate: { type: String },
-          todate: { type: String },
-          userid: { type: String },
-          status: { type: String },
-        },
-      ],
-      default: [],
-    },
+    type: { type: String, required: true },
+    description: { type: String, required: true },
 
-    type: {
-      type: String,
-      required: true,
-      enum: ["Deluxe", "Suite", "Standard", "Economy", "Premium"],
-    },
+    facilities: { type: [String], default: [] },
+    rating: { type: Number, default: 0 },
+    isAvailable: { type: Boolean, default: true },
 
-    description: {
-      type: String,
-      required: true,
-      minlength: 10,
-    },
-
-    facilities: {
-      type: [String],
-      default: [],
-    },
-
-    rating: {
-      type: Number,
-      min: 0,
-      max: 5,
-      default: 0,
-    },
-
-    isAvailable: {
-      type: Boolean,
-      default: true,
-    },
+    currentbookings: { type: Array, default: [] },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-module.exports = mongoose.model("rooms", roomSchema);
+// 🔒 FORCE correct collection
+module.exports = mongoose.model("Room", roomSchema, "rooms");

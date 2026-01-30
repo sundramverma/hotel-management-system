@@ -1,8 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
 import Loader from "../components/Loader";
 import Error from "../components/Error";
 import Success from "../components/Success";
+import API from "../api";
 
 function RegisterScreen() {
   const [name, setName] = useState("");
@@ -25,22 +25,19 @@ function RegisterScreen() {
       return;
     }
 
-    const user = {
-      name,
-      email,
-      password,
-    };
-
     try {
       setLoading(true);
       setError(null);
 
-      await axios.post("/api/users/register", user);
+      await API.post("/users/register", {
+        name,
+        email,
+        password,
+      });
 
       setLoading(false);
       setSuccess(true);
 
-      // clear form
       setName("");
       setEmail("");
       setPassword("");
@@ -62,37 +59,18 @@ function RegisterScreen() {
           <div className="bs">
             <h2>Register</h2>
 
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <input className="form-control" placeholder="Name"
+              value={name} onChange={(e) => setName(e.target.value)} />
 
-            <input
-              type="email"
-              className="form-control"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <input className="form-control" placeholder="Email"
+              value={email} onChange={(e) => setEmail(e.target.value)} />
 
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type="password" className="form-control" placeholder="Password"
+              value={password} onChange={(e) => setPassword(e.target.value)} />
 
-            <input
-              type="password"
-              className="form-control"
-              placeholder="Confirm Password"
+            <input type="password" className="form-control" placeholder="Confirm Password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+              onChange={(e) => setConfirmPassword(e.target.value)} />
 
             <button className="btn btn-primary mt-3" onClick={register}>
               Register

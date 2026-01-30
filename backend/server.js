@@ -1,35 +1,26 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
+require("dotenv").config();
 
-dotenv.config();
-
-// DB connection
-require("./db");
+const connectDB = require("./db");
 
 const app = express();
-
-// middlewares
 app.use(express.json());
 app.use(cors());
 
-// routes
-const roomRoutes = require("./routes/roomRoute");
-const bookingRoutes = require("./routes/bookingRoute");
-const userRoutes = require("./routes/userRoute");
-
-app.use("/api/rooms", roomRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/users", userRoutes);
-
-// test route
-app.get("/", (req, res) => {
-  res.send("🚀 Hotel Management API Running");
+/* 🔥 TEST ROUTE */
+app.get("/test", (req, res) => {
+  res.send("SERVER OK");
 });
 
-const PORT = process.env.PORT || 5000;
+/* 🔥 ROUTES */
+app.use("/api/rooms", require("./routes/roomRoute"));
+app.use("/api/users", require("./routes/userRoute"));
+app.use("/api/bookings", require("./routes/bookingRoute")); // ✅ MUST
+
+connectDB();
+
+const PORT = 5001;
 app.listen(PORT, () => {
-  console.log("=================================");
-  console.log(`✅ Backend running on http://localhost:${PORT}`);
-  console.log("=================================");
+  console.log(`🚀 Backend running on http://localhost:${PORT}`);
 });
