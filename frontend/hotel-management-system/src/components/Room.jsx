@@ -2,26 +2,24 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../api";
 
-/* 🔥 IMAGE NORMALIZER */
+/* 🔥 IMAGE NORMALIZER (PRODUCTION SAFE) */
 const normalizeImages = (imageurls) => {
   if (!imageurls) return [];
 
-  // array of strings
-  if (Array.isArray(imageurls) && typeof imageurls[0] === "string") {
-    return imageurls;
+  let urls = [];
+
+  if (Array.isArray(imageurls)) {
+    urls = imageurls;
+  } else if (typeof imageurls === "string") {
+    urls = [imageurls];
   }
 
-  // array of objects (cloudinary)
-  if (Array.isArray(imageurls) && imageurls[0]?.url) {
-    return imageurls.map((img) => img.url);
-  }
-
-  // single string
-  if (typeof imageurls === "string") {
-    return [imageurls];
-  }
-
-  return [];
+  // 🔥 FIX: make relative URLs absolute (Render backend)
+  return urls.map((img) =>
+    img.startsWith("http")
+      ? img
+      : `${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}${img}`
+  );
 };
 
 function Room({ room, fromdate, todate }) {
@@ -139,16 +137,12 @@ function Room({ room, fromdate, todate }) {
                           src={img}
                           className="d-block w-100"
                           alt={`room-${index}`}
-                          style={{
-                            height: "400px",
-                            objectFit: "cover",
-                          }}
+                          style={{ height: "400px", objectFit: "cover" }}
                         />
                       </div>
                     ))}
                   </div>
 
-                  {/* ⬅️ PREVIOUS */}
                   {images.length > 1 && (
                     <>
                       <button
@@ -160,7 +154,6 @@ function Room({ room, fromdate, todate }) {
                         <span className="carousel-control-prev-icon"></span>
                       </button>
 
-                      {/* ➡️ NEXT */}
                       <button
                         className="carousel-control-next"
                         type="button"
@@ -180,7 +173,7 @@ function Room({ room, fromdate, todate }) {
               <p><b>Phone:</b> {room.phonenumber}</p>
               <p><b>Type:</b> {room.type}</p>
 
-              {room.facilities && room.facilities.length > 0 && (
+              {room.facilities?.length > 0 && (
                 <p>
                   <b>Facilities:</b> {room.facilities.join(", ")}
                 </p>
