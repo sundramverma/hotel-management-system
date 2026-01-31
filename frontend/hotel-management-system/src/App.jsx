@@ -9,6 +9,7 @@ import LoginScreen from "./screens/Loginscreen";
 import Profilescreen from "./screens/Profilescreen";
 import Adminscreen from "./screens/Adminscreen";
 import Landingscreen from "./screens/Landingscreen";
+import Deletescreen from "./screens/Deletescreen";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/login" element={<LoginScreen />} />
         <Route path="/profile" element={<Profilescreen />} />
         <Route path="/admin" element={<Adminscreen />} />
+        <Route path="/delete-account" element={<Deletescreen />} />
       </Routes>
     </>
   );

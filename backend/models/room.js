@@ -8,7 +8,6 @@ const roomSchema = new mongoose.Schema(
     phonenumber: { type: Number, required: true },
     rentperday: { type: Number, required: true },
 
-    // 🔥 MATCHING YOUR DB
     imageurls: {
       type: [String],
       required: true,
@@ -21,10 +20,17 @@ const roomSchema = new mongoose.Schema(
     rating: { type: Number, default: 0 },
     isAvailable: { type: Boolean, default: true },
 
-    currentbookings: { type: Array, default: [] },
+    // 🔥 IMPORTANT FOR BOOKINGS CLEANUP
+    currentbookings: [
+      {
+        bookingid: String,
+        fromdate: String,
+        todate: String,
+      },
+    ],
   },
   { timestamps: true }
 );
 
-// 🔒 FORCE correct collection
+// 🔒 FORCE correct collection name
 module.exports = mongoose.model("Room", roomSchema, "rooms");

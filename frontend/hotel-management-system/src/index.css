@@ -223,3 +223,33 @@ h2 {
   }
 }
 
+.navbar .dropdown-menu {
+  left: auto !important;
+  right: auto !important;
+}
+html {
+  overflow-y: scroll;
+}
+
+body.modal-open {
+  padding-right: 0 !important;
+}
+
+.navbar {
+  width: 100%;
+}
+/* 🚫 STOP BOOTSTRAP MODAL LAYOUT SHIFT COMPLETELY */
+body.modal-open {
+  overflow: hidden;
+  padding-right: 0 !important;
+}
+
+/* 🔥 MOST IMPORTANT */
+.container,
+.container-fluid {
+  padding-right: 15px !important;
+  padding-left: 15px !important;
+}
+
+
+

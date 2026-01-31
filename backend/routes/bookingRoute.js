@@ -38,9 +38,16 @@ router.post("/checkavailability", async (req, res) => {
 /* ================= BOOK ROOM ================= */
 router.post("/bookroom", async (req, res) => {
   try {
-    const booking = await Booking.create(req.body);
+    console.log("👉 BOOKING BODY:", req.body);
+
+    // 🔥 ENSURE userid is STRING
+    const booking = await Booking.create({
+      ...req.body,
+      userid: req.body.userid.toString(),
+    });
 
     const room = await Room.findById(req.body.roomid);
+
     room.currentbookings.push({
       bookingid: booking._id.toString(),
       fromdate: req.body.fromdate,
@@ -51,6 +58,7 @@ router.post("/bookroom", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Booking failed" });
   }
 });
@@ -72,15 +80,17 @@ router.post("/cancelbooking", async (req, res) => {
 
     console.log("🔥 HARD DELETE:", bookingid);
 
-    // 1. DELETE booking completely
+    // 1. DELETE booking
     await Booking.findByIdAndDelete(bookingid);
 
-    // 2. REMOVE dates from room
+    // 2. REMOVE booking from room
     const room = await Room.findById(roomid);
-    room.currentbookings = room.currentbookings.filter(
-      (b) => b.bookingid !== bookingid
-    );
-    await room.save();
+    if (room) {
+      room.currentbookings = room.currentbookings.filter(
+        (b) => b.bookingid !== bookingid
+      );
+      await room.save();
+    }
 
     res.json({ success: true });
   } catch (err) {

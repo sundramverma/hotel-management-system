@@ -12,6 +12,16 @@
   text-align: center;
 }
 
+.navbar .dropdown-menu {
+  left: auto !important;
+  right: auto !important;
+}
+
+body.modal-open {
+  padding-right: 0 !important;
+}
+
+
 .mt-2 {
   margin-top: 10px;
 }
